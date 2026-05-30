@@ -1,0 +1,56 @@
+# ========================
+# PlatformIO
+# ========================
+.pio/
+firmware/.pio/
+firmware/.vscode/
+
+# ========================
+# Node.js
+# ========================
+node_modules/
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ========================
+# Database
+# ========================
+*.sqlite
+database.sqlite
+
+# ========================
+# Environment Variables
+# ========================
+.env
+.env.local
+.env.production
+
+# ========================
+# Logs
+# ========================
+*.log
+logs/
+
+# ========================
+# OS Generated Files
+# ========================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ========================
+# IDE / Editor
+# ========================
+.idea/
+*.swp
+*.swo
+*~
+*.bak
+
+# ========================
+# Setup script
+# ========================
+setup_git.ps1
