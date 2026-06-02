@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hệ Thống Báo Cháy Thông Minh — ESP32 IoT</title>
+  <meta name="description" content="Dashboard giám sát hệ thống báo cháy thông minh với ESP32. Theo dõi nhiệt độ, khí khóa, lửa và điều khiển cửa thoát hiểm từ xa." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Socket.IO -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <!-- App CSS -->
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+  <!-- ====== BACKGROUND PARTICLES ====== -->
+  <div class="bg-particles" id="bgParticles">
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    <div class="glow-orb orb-3"></div>
+  </div>
+
+  <div class="app-container">
+
+    <!-- ====== HEADER ====== -->
+    <header class="header" id="header">
+      <div class="header-content">
+        <div class="header-left">
+          <div class="logo">
+            <div class="logo-icon-wrapper">
+              <i class="ph-fill ph-fire logo-icon"></i>
+            </div>
+            <div>
+              <h1 id="page-title">Hệ Thống Báo Cháy</h1>
+              <p class="subtitle">Giám sát thông minh — ESP32 IoT</p>
+            </div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="alert-status" id="alertStatus">
+            <div class="alert-indicator normal" id="alertIndicator">
+              <span class="alert-dot"></span>
+              <span class="alert-text">Bình thường</span>
+            </div>
+          </div>
+          <div class="connection-badge" id="connectionBadge">
+            <span class="conn-dot" id="connDot"></span>
+            <span id="connText">Đang kết nối...</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ====== FIRE LEVEL ALERT ====== -->
+    <section class="alert-banner" id="alertBanner">
+      <div class="alert-content">
+        <div class="alert-icon-wrapper">
+          <i class="ph-bold ph-check-circle alert-icon" id="alertBannerIcon"></i>
+        </div>
+        <div class="alert-text-content">
+          <span class="alert-title" id="alertTitle">Trạng thái bình thường</span>
+          <span class="alert-description" id="alertDescription">Không phát hiện mối nguy hiểm</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== SENSOR CARDS ====== -->
+    <section class="section" id="sensors-section">
+      <div class="section-header">
+        <h2 class="section-title"><i class="ph-fill ph-chart-polar title-icon"></i> Dữ liệu cảm biến</h2>
+        <span class="last-update" id="lastUpdate">Chưa có dữ liệu</span>
+      </div>
+
+      <div class="sensor-grid">
+        <!-- Temperature -->
+        <div class="sensor-card temp-card" id="card-temp" data-type="temp">
+          <div class="card-glow"></div>
+          <div class="card-content">
+            <div class="card-header">
+              <i class="ph-fill ph-thermometer card-icon"></i>
+              <span class="card-label">Nhiệt độ</span>
+            </div>
+            <div class="gauge-container">
+              <svg class="gauge" viewBox="0 0 120 120">
+                <defs>
+                  <linearGradient id="tempGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#f97316" />
+                    <stop offset="100%" stop-color="#ef4444" />
+                  </linearGradient>
+                </defs>
+                <circle class="gauge-bg" cx="60" cy="60" r="50" />
+                <circle class="gauge-fill" id="tempGauge" cx="60" cy="60" r="50" />
+              </svg>
+              <div class="gauge-value">
+                <span class="value-number" id="tempValue">--</span>
+                <span class="value-unit">°C</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <span class="footer-label">Phạm vi: 0 — 100°C</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Humidity -->
+        <div class="sensor-card hum-card" id="card-humidity" data-type="humidity">
+          <div class="card-glow"></div>
+          <div class="card-content">
+            <div class="card-header">
+              <i class="ph-fill ph-drop card-icon"></i>
+              <span class="card-label">Độ ẩm</span>
+            </div>
+            <div class="gauge-container">
+              <svg class="gauge" viewBox="0 0 120 120">
+                <defs>
+                  <linearGradient id="humGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#3b82f6" />
+                    <stop offset="100%" stop-color="#06b6d4" />
+                  </linearGradient>
+                </defs>
+                <circle class="gauge-bg" cx="60" cy="60" r="50" />
+                <circle class="gauge-fill" id="humGauge" cx="60" cy="60" r="50" />
+              </svg>
+              <div class="gauge-value">
+                <span class="value-number" id="humValue">--</span>
+                <span class="value-unit">%</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <span class="footer-label">Phạm vi: 0 — 100%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Smoke Detection -->
+        <div class="sensor-card smoke-card" id="card-smoke" data-type="smoke">
+          <div class="card-glow"></div>
+          <div class="card-content">
+            <div class="card-header">
+              <i class="ph-fill ph-wind card-icon"></i>
+              <span class="card-label">Khí gas / CO</span>
+            </div>
+            <div class="gauge-container">
+              <svg class="gauge" viewBox="0 0 120 120">
+                <defs>
+                  <linearGradient id="smokeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#eab308" />
+                    <stop offset="100%" stop-color="#d97706" />
+                  </linearGradient>
+                </defs>
+                <circle class="gauge-bg" cx="60" cy="60" r="50" />
+                <circle class="gauge-fill" id="smokeGauge" cx="60" cy="60" r="50" />
+              </svg>
+              <div class="gauge-value">
+                <span class="value-number" id="smokeValue">--</span>
+                <span class="value-unit">ppm</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <span class="footer-label" id="smokeStatus">Trạng thái: —</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Flame Detection -->
+        <div class="sensor-card flame-card" id="card-flame" data-type="flame">
+          <div class="card-glow"></div>
+          <div class="card-content">
+            <div class="card-header">
+              <i class="ph-fill ph-fire card-icon"></i>
+              <span class="card-label">Cảm biến lửa</span>
+            </div>
+            <div class="flame-detector">
+              <div class="flame-indicator" id="flameIndicator">
+                <div class="flame-dot"></div>
+                <div class="flame-ripple"></div>
+              </div>
+              <div class="flame-status" id="flameStatus">
+                <span class="status-text">Không phát hiện</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <span class="footer-label">Hồng ngoại (IR)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== CHART SECTION ====== -->
+    <section class="section" id="chart-section">
+      <div class="section-header">
+        <h2 class="section-title"><i class="ph-fill ph-trend-up title-icon"></i> Biểu đồ lịch sử</h2>
+        <div class="chart-legend" id="chartLegend">
+          <button class="legend-btn active" data-dataset="temperature" onclick="toggleDataset('temperature')"><span class="legend-dot temp-dot"></span>Nhiệt độ</button>
+          <button class="legend-btn active" data-dataset="humidity" onclick="toggleDataset('humidity')"><span class="legend-dot hum-dot"></span>Độ ẩm</button>
+          <button class="legend-btn active" data-dataset="smoke" onclick="toggleDataset('smoke')"><span class="legend-dot smoke-dot"></span>Khí Gas/CO</button>
+        </div>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="sensorChart"></canvas>
+      </div>
+    </section>
+
+    <!-- ====== FIRE LEVEL & CONTROL GRID ====== -->
+    <div class="bottom-grid">
+      
+      <!-- ====== LEVEL INDICATOR ====== -->
+      <section class="section level-section" id="level-section">
+        <div class="section-header">
+          <h2 class="section-title"><i class="ph-fill ph-warning title-icon"></i> Cấp độ báo động</h2>
+        </div>
+        <div class="fire-level-container">
+          <div class="fire-level-bar">
+            <div class="level-indicator" id="levelIndicator"></div>
+          </div>
+          <div class="level-labels">
+            <span class="level-label level-1">
+              <span class="label-dot"></span>
+              <span>1. Bình thường</span>
+            </span>
+            <span class="level-label level-2">
+              <span class="label-dot"></span>
+              <span>2. Cảnh báo</span>
+            </span>
+            <span class="level-label level-3">
+              <span class="label-dot"></span>
+              <span>3. Khẩn cấp</span>
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====== CONTROL PANEL ====== -->
+      <section class="section control-section" id="control-section">
+        <div class="section-header">
+          <h2 class="section-title"><i class="ph-fill ph-sliders-horizontal title-icon"></i> Điều khiển</h2>
+        </div>
+        
+        <div class="control-grid">
+          <!-- Door Control -->
+          <div class="control-panel" id="doorPanel">
+            <div class="panel-header">
+              <i class="ph-fill ph-door panel-icon"></i>
+              <span class="panel-title">Cửa thoát hiểm</span>
+            </div>
+
+            <div class="door-display" id="doorDisplay">
+              <div class="door-visual" id="doorVisual">
+                <svg viewBox="0 0 200 300" class="door-svg">
+                  <!-- Door frame -->
+                  <rect x="20" y="20" width="160" height="260" fill="none" stroke="currentColor" stroke-width="6" rx="8"/>
+                  <!-- Door -->
+                  <rect class="door-element" x="30" y="30" width="140" height="240" fill="currentColor" rx="4"/>
+                  <!-- Door handle -->
+                  <circle class="door-handle" cx="150" cy="150" r="10" fill="white"/>
+                </svg>
+              </div>
+              <div class="door-info">
+                <div class="door-state" id="doorState">ĐÓNG</div>
+              </div>
+            </div>
+
+            <div class="door-buttons">
+              <button class="btn btn-door-open" id="btnDoorOpen" onclick="controlDoor('OPEN')">
+                <i class="ph-bold ph-lock-open btn-icon"></i> MỞ
+              </button>
+              <button class="btn btn-door-close" id="btnDoorClose" onclick="controlDoor('CLOSE')">
+                <i class="ph-bold ph-lock-key btn-icon"></i> ĐÓNG
+              </button>
+            </div>
+          </div>
+
+          <!-- Emergency Panel -->
+          <div class="control-panel emergency-panel" id="emergencyPanel">
+            <div class="panel-header emergency-header">
+              <i class="ph-fill ph-siren panel-icon"></i>
+              <span class="panel-title">Xử lý sự cố</span>
+            </div>
+
+            <div class="emergency-status" id="emergencyStatus">
+              <div class="emergency-state" id="emergencyState">
+                <i class="ph-bold ph-shield-check state-icon"></i>
+                <span>Hệ thống an toàn</span>
+              </div>
+            </div>
+
+            <button class="btn btn-emergency" id="btnEmergency" onclick="triggerEmergency()">
+              KÍCH HOẠT KHẨN CẤP <i class="ph-bold ph-warning-circle"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ====== ACTIVITY LOG ====== -->
+    <section class="section" id="log-section">
+      <div class="section-header">
+        <h2 class="section-title"><i class="ph-fill ph-list-dashes title-icon"></i> Nhật ký hoạt động</h2>
+        <button class="btn-clear" onclick="clearLog()">
+          <i class="ph-bold ph-trash"></i> Xóa
+        </button>
+      </div>
+      <div class="log-wrapper">
+        <div class="log-container" id="logContainer">
+          <div class="log-entry"><span class="log-time">[--:--:--]</span> <span class="log-msg log-info">Đang khởi tạo hệ thống báo cháy...</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== FOOTER ====== -->
+    <footer class="footer">
+      <div class="footer-content">
+        <p>© 2025 Nguyễn Nhật Minh — MSSV: 20225886 — Đồ án Báo Cháy IoT — HUST</p>
+        <p class="footer-tech">ESP32 • DHT22 • MQ2 • MQTT • Node.js • Socket.IO</p>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- App JS -->
+  <script src="/js/app.js"></script>
+</body>
+</html>
