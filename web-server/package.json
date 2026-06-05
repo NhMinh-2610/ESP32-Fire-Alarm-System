@@ -1,7 +1,7 @@
-﻿{
+{
   "name": "fire-alarm-web-server",
   "version": "1.0.0",
-  "description": "Web server for ESP32 Fire Alarm System",
+  "description": "Web server & dashboard cho hệ thống báo cháy thông minh ESP32 — Nguyễn Nhật Minh 20225886",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
