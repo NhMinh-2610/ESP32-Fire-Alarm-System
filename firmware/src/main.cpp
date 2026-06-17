@@ -420,7 +420,13 @@ void connectMqttIfNeeded() {
   Serial.print("[MQTT] Connecting as ");
   Serial.println(clientId);
 
-  if (client.connect(clientId)) {
+#if defined(MQTT_USER) && defined(MQTT_PASSWORD)
+  bool connected = client.connect(clientId, MQTT_USER, MQTT_PASSWORD);
+#else
+  bool connected = client.connect(clientId);
+#endif
+
+  if (connected) {
     Serial.println("[MQTT] Connected");
     client.subscribe(MQTT_CONTROL_TOPIC);
     lastStatusPublish = 0;

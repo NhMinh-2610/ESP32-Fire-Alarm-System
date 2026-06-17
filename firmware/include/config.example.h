@@ -4,15 +4,22 @@
 #define WIFI_SSID "YOUR_WIFI_SSID"
 #define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
 
-// Change DHT22 to DHT11 if your real temperature/humidity sensor is DHT11.
-#define DHT_SENSOR_TYPE DHT22
-
-#define MQTT_SERVER "broker.hivemq.com"
+// 2. CẤU HÌNH MQTT BROKER
+// Nếu dùng broker local (víду aedes), điền IP máy tính của bạn (VD: 192.168.1.10)
+// Nếu dùng HiveMQ public, điền "broker.hivemq.com"
+#define MQTT_SERVER "192.168.1.10" 
 #define MQTT_PORT 1883
+
+// Thông tin đăng nhập MQTT (nếu có, ví dụ khi dùng local aedes broker)
+#define MQTT_USER "admin"
+#define MQTT_PASSWORD "firealarm_secure_2026"
 #define MQTT_TELEMETRY_TOPIC "nguyennhatminh_20225886/telemetry"
 #define MQTT_CONTROL_TOPIC "nguyennhatminh_20225886/led_control"
 #define MQTT_DOOR_STATUS_TOPIC "nguyennhatminh_20225886/status/door"
 #define MQTT_EMERGENCY_STATUS_TOPIC "nguyennhatminh_20225886/status/emergency"
+
+// Change DHT22 to DHT11 if your real temperature/humidity sensor is DHT11.
+#define DHT_SENSOR_TYPE DHT22
 
 #define DHT_MIN_VALID_C -20.0f
 #define DHT_MAX_VALID_C 80.0f
