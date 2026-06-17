@@ -71,6 +71,8 @@ function resetHeartbeat(deviceId) {
 const clientId = 'NodeServer_' + Math.random().toString(16).substring(2, 10);
 const mqttClient = mqtt.connect(CONFIG.MQTT_BROKER, {
   clientId,
+  username: CONFIG.MQTT_USERNAME,
+  password: CONFIG.MQTT_PASSWORD,
   clean: true,
   connectTimeout: 10000,
   reconnectPeriod: 5000,
@@ -197,8 +199,9 @@ const publish = (deviceId, command) => {
     return;
   }
   const topic = `${device.topicPrefix}/led_control`;
-  mqttClient.publish(topic, String(command));
-  console.log(`[MQTT] 📤 [${deviceId}] ${topic} → ${command}`);
+  const payload = JSON.stringify({ action: command });
+  mqttClient.publish(topic, payload);
+  console.log(`[MQTT] 📤 [${deviceId}] ${topic} → ${payload}`);
 };
 
 module.exports = {

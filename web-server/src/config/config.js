@@ -1,8 +1,10 @@
 module.exports = {
   WEB_PORT: process.env.PORT || 3000,
-  MQTT_BROKER: process.env.MQTT_BROKER || 'mqtt://broker.hivemq.com:1883',
+  MQTT_BROKER: process.env.MQTT_BROKER || 'mqtt://127.0.0.1:1883',
+  MQTT_USERNAME: process.env.MQTT_USERNAME || 'admin',
+  MQTT_PASSWORD: process.env.MQTT_PASSWORD || 'firealarm_secure_2026',
 
-  // Mã bảo mật để thực hiện các lệnh điều khiển
+  // Mã bảo mật để thực hiện các lệnh điều khiển qua giao diện Web
   SECURITY_CODE: process.env.SECURITY_CODE || '1234',
 
   // Thời gian (ms) không nhận dữ liệu thì coi kit là offline
