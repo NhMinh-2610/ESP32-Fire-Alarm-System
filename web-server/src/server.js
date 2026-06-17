@@ -12,6 +12,10 @@ const mqttService = require('./services/mqttService');
 const { setupSockets } = require('./sockets/socketIO');
 const { setupRoutes } = require('./routes/apiRoutes');
 
+const isValidTemperature = (value) => Number.isFinite(value) && value >= -20 && value <= 80;
+const isValidHumidity = (value) => Number.isFinite(value) && value >= 0 && value <= 100;
+const isValidSmoke = (value) => Number.isFinite(value) && value >= 0 && value <= 4095;
+
 // KHỞI ĐỘNG HỆ THỐNG
 async function startServer() {
   // Khởi tạo CSDL trước
@@ -27,10 +31,18 @@ async function startServer() {
   let sensorHistory = [];
   try {
     const rows = db.all(`SELECT * FROM sensor_data ORDER BY id DESC LIMIT ?`, [CONFIG.MAX_HISTORY]);
-    sensorHistory = rows.reverse().map(row => ({
-      ...row,
-      flame: row.flame === 1,
-    }));
+    sensorHistory = rows.reverse().map(row => {
+      const data = {
+        ...row,
+        flame: row.flame === 1,
+      };
+
+      if (!isValidTemperature(data.temperature)) delete data.temperature;
+      if (!isValidHumidity(data.humidity)) delete data.humidity;
+      if (!isValidSmoke(data.smoke)) delete data.smoke;
+
+      return data;
+    });
     console.log(`[DB] 📦 Đã tải ${sensorHistory.length} bản ghi lịch sử.`);
   } catch (err) {
     console.error('[DB] ❌ Lỗi khi tải lịch sử:', err.message);
