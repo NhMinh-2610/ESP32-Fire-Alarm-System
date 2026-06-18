@@ -130,11 +130,13 @@ const setupMqtt = (io, sensorHistory) => {
 
         // Persist to SQLite
         db.run(
-          `INSERT INTO sensor_data (temperature, humidity, smoke, flame, timestamp) VALUES (?, ?, ?, ?, ?)`,
+          `INSERT INTO sensor_data (deviceId, temperature, humidity, smoke, smoke_delta, flame, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)`,
           [
+            data.deviceId,
             isValidTemperature(data.temperature) ? data.temperature : null,
             isValidHumidity(data.humidity)        ? data.humidity    : null,
             isValidSmoke(data.smoke)              ? data.smoke       : null,
+            Number.isFinite(data.smoke_delta)     ? data.smoke_delta : null,
             data.flame ? 1 : 0,
             data.timestamp,
           ]

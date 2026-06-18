@@ -1,69 +1,46 @@
-const initSqlJs = require('sql.js');
-const fs = require('fs');
+const Database = require('better-sqlite3');
 const path = require('path');
 
 const dbPath = path.join(__dirname, '../../database.sqlite');
 
 let db = null;
 
-// Lưu CSDL xuống ổ đĩa
-function saveToDisk() {
-  if (db) {
-    const data = db.export();
-    fs.writeFileSync(dbPath, Buffer.from(data));
-  }
-}
-
 // Khởi tạo CSDL
 async function initDB() {
-  const SQL = await initSqlJs();
-
-  try {
-    if (fs.existsSync(dbPath)) {
-      const buffer = fs.readFileSync(dbPath);
-      db = new SQL.Database(buffer);
-      console.log('[DB] ✅ Đã tải CSDL từ file!');
-    } else {
-      db = new SQL.Database();
-      console.log('[DB] ✅ Tạo CSDL mới!');
-    }
-  } catch (err) {
-    db = new SQL.Database();
-    console.log('[DB] ⚠️ Tạo CSDL mới (không đọc được file cũ)');
-  }
+  // Mở (hoặc tự tạo) file database.sqlite
+  db = new Database(dbPath);
+  console.log('[DB] ✅ CSDL SQLite chuẩn (better-sqlite3) đã sẵn sàng!');
 
   // Tạo bảng nếu chưa có
-  db.run(`CREATE TABLE IF NOT EXISTS sensor_data (
+  // Thêm cột deviceId và smoke_delta so với bản cũ
+  db.exec(`CREATE TABLE IF NOT EXISTS sensor_data (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    deviceId TEXT,
     temperature REAL,
     humidity REAL,
     smoke REAL,
+    smoke_delta REAL,
     flame INTEGER,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
-  saveToDisk();
 
   return db;
 }
 
-// Chèn dữ liệu
+// Chèn hoặc cập nhật dữ liệu
 function run(sql, params = []) {
   if (!db) return;
-  db.run(sql, params);
-  saveToDisk();
+  const stmt = db.prepare(sql);
+  // Thực thi truy vấn với tham số
+  stmt.run(...params);
 }
 
 // Truy vấn danh sách
 function all(sql, params = []) {
   if (!db) return [];
   const stmt = db.prepare(sql);
-  if (params.length) stmt.bind(params);
-  const results = [];
-  while (stmt.step()) {
-    results.push(stmt.getAsObject());
-  }
-  stmt.free();
-  return results;
+  // Trả về mảng JSON kết quả
+  return stmt.all(...params);
 }
 
 module.exports = { initDB, run, all };
