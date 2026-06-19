@@ -76,6 +76,7 @@ const mqttClient = mqtt.connect(CONFIG.MQTT_BROKER, {
   clean: true,
   connectTimeout: 10000,
   reconnectPeriod: 5000,
+  protocolVersion: 4,  
 });
 
 const setupMqtt = (io, sensorHistory) => {

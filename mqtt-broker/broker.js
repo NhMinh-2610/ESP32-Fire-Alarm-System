@@ -6,9 +6,6 @@ require('dotenv').config();
 // Aedes là lõi của MQTT Broker. Nó giúp chúng ta không phải tự code các quy tắc phức tạp 
 // của giao thức MQTT (như gói tin CONNECT, PUBLISH, cờ QoS, v.v.).
 const aedes = require('aedes')();
-
-// Tạo một máy chủ TCP (chuẩn mạng) và gắn bộ xử lý (handle) của Aedes vào.
-// Khi có thiết bị kết nối vào cổng TCP này, Aedes sẽ đứng ra tiếp đón và xử lý theo chuẩn MQTT.
 const server = require('net').createServer(aedes.handle);
 
 // Thư viện 'chalk' dùng để tô màu chữ trên Terminal giúp dễ nhìn hơn

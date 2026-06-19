@@ -591,35 +591,14 @@ void readSensorsAndPublish() {
   const bool effectiveEmergency = manualEmergency || fireLevel == 3;
   const bool effectiveDoorOpen = effectiveEmergency || doorOverrideOpen;
 
-  StaticJsonDocument<512> doc;
-  if (dhtValid) {
-    doc["temperature"] = temperature;
-    doc["humidity"] = humidity;
-  }
-  doc["smoke"] = smokeValue;
-  doc["smoke_delta"] = mq2Delta(smokeValue);
-  doc["mq2_baseline"] = mq2Baseline;
-  doc["flame"] = hasFlame;
-  doc["flame_raw"] = flameRawLevel == HIGH ? "HIGH" : "LOW";
-  doc["flame_idle"] = flameIdleReady ? (flameIdleLevel == HIGH ? "HIGH" : "LOW") : "CALIBRATING";
-  doc["level"] = effectiveEmergency ? 3 : fireLevel;
-  doc["door"] = effectiveDoorOpen ? "OPEN" : "CLOSED";
-  doc["emergency"] = effectiveEmergency;
-  doc["dht_valid"] = dhtValid;
-  doc["mq2_ready"] = mq2Ready;
-
-  if (WiFi.status() == WL_CONNECTED) {
-    doc["wifi_rssi"] = WiFi.RSSI();
-  }
-
-  String payload;
-  serializeJson(doc, payload);
+  String payload = "{\"smoke\":" + String(smokeValue) + ",\"level\":" + String(effectiveEmergency ? 3 : fireLevel) + "}";
 
   Serial.print("[DATA] ");
   Serial.println(payload);
 
   if (client.connected()) {
-    client.publish(MQTT_TELEMETRY_TOPIC, payload.c_str());
+    bool ok = client.publish(MQTT_TELEMETRY_TOPIC, payload.c_str());
+    if (!ok) Serial.println("[MQTT] Publish failed! (Buffer too small?)");
   }
 }
 
