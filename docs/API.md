@@ -1,182 +1,128 @@
-# 🔗 API Reference — ESP32 Fire Alarm System
+# Tài liệu API & Giao thức MQTT
 
-## 📡 MQTT Topics
-
-### Broker Configuration
-
-| Thuộc tính | Giá trị |
-|-----------|---------|
-| **Broker** | `broker.hivemq.com` |
-| **Port** | `1883` (TCP, không mã hóa) |
-| **Protocol** | MQTT v3.1.1 |
-| **Client ID (ESP32)** | `ESP32_FireAlarmClient` |
-| **Client ID (Server)** | `NodeServer_<random>` |
+Tài liệu này liệt kê toàn bộ các Endpoint REST API và cấu trúc bản tin MQTT Payload sử dụng trong hệ thống.
 
 ---
 
-### Topics
+## 1. Giao thức MQTT
 
-#### 📤 Telemetry — ESP32 gửi dữ liệu cảm biến
+Hệ thống giao tiếp nội bộ qua Mosquitto MQTT Broker (Local). 
+- **Địa chỉ Broker**: Tuỳ vào IP LAN của máy tính chạy Node.js (Ví dụ: `192.168.1.5`).
+- **Cổng (Port)**: `1883` (TCP/Không mã hoá TLS).
+- **Chứng thực**: Yêu cầu Username (`admin`) & Password (`firealarm_secure_2026`).
 
-| Thuộc tính | Giá trị |
-|-----------|---------|
-| **Topic** | `nguyennhatminh_20225886/telemetry` |
-| **Direction** | ESP32 → Server |
-| **QoS** | 0 |
-| **Interval** | Mỗi 2 giây (bình thường) / liên tục (khẩn cấp) |
+### A. Luồng Dữ liệu Cảm biến (Telemetry)
+- **Topic**: `{topicPrefix}/telemetry` (VD: `nguyennhatminh_20225886/telemetry`)
+- **Hướng**: ESP32 gửi lên Web Server.
+- **Tần suất**: Mỗi 2 giây.
 
-**Payload (JSON)**:
-
+**Định dạng Payload (JSON):**
 ```json
 {
-  "temperature": 25.5,
-  "humidity": 60.2,
-  "smoke": 350,
-  "flame": false,
-  "level": 1
+ "temperature": 34.2,
+ "humidity": 46.0,
+ "smoke": 1290,
+ "smoke_delta": 4,
+ "flame": false,
+ "flame_analog": 4095,
+ "level": 1,
+ "mq2_ready": true,
+ "wifi_rssi": -56
 }
 ```
 
-| Field | Type | Range | Mô tả |
-|-------|------|-------|--------|
-| `temperature` | `float` | -40 ~ 80 | Nhiệt độ (°C) từ DHT22 |
-| `humidity` | `float` | 0 ~ 100 | Độ ẩm (%) từ DHT22 |
-| `smoke` | `int` | 0 ~ 4095 | Giá trị ADC từ MQ-2 |
-| `flame` | `bool` | true/false | Trạng thái phát hiện lửa |
-| `level` | `int` | 1, 2, 3 | Cấp độ báo cháy |
+### B. Luồng Lệnh Điều khiển (Control)
+- **Topic**: `{topicPrefix}/led_control`
+- **Hướng**: Web Server gửi xuống ESP32.
+- **Tần suất**: Chỉ gửi khi người dùng thao tác trên Dashboard.
 
----
-
-#### 📥 Control — Server gửi lệnh đến ESP32
-
-| Thuộc tính | Giá trị |
-|-----------|---------|
-| **Topic** | `nguyennhatminh_20225886/led_control` |
-| **Direction** | Server → ESP32 |
-| **QoS** | 0 |
-
-**Payload (JSON)**:
-
+**Định dạng Payload (JSON):**
 ```json
-{"action": "<COMMAND>"}
+{"action": "OPEN"}
 ```
 
-**Danh sách lệnh**:
-
-| Action | Mô tả | ESP32 Response |
-|--------|-------|----------------|
-| `OPEN_DOOR` | Mở cửa thoát hiểm | Servo → 90° (mở), fireLevel = 3 |
-| `CLOSE_DOOR` | Đóng cửa thoát hiểm | Servo → 0° (đóng), fireLevel = 1 |
-| `BUZZER_ON` | Bật còi báo động | GPIO 4 = HIGH |
-| `BUZZER_OFF` | Tắt còi báo động | GPIO 4 = LOW |
-| `LED_RED_ON` | Bật LED đỏ | GPIO 2 = HIGH |
-| `LED_RED_OFF` | Tắt LED đỏ | GPIO 2 = LOW |
-| `LED_BLUE_ON` | Bật LED xanh | GPIO 19 = HIGH |
-| `LED_BLUE_OFF` | Tắt LED xanh | GPIO 19 = LOW |
-| `EMERGENCY_STOP` | Dừng tất cả, reset về bình thường | Tắt hết, servo = 0°, level = 1 |
+**Các Lệnh (Action) hợp lệ:**
+- `OPEN` / `CLOSE`: Bắt buộc Mở / Đóng cửa thoát hiểm.
+- `EMERGENCY`: Bắt buộc kích hoạt chế độ báo động khẩn cấp.
+- `STOP_ALARM`: Reset toàn bộ trạng thái hệ thống, dừng còi hú, tắt đèn báo.
 
 ---
 
-## 🌐 REST API
+## 2. API Giao tiếp Real-time (Socket.IO)
 
-Base URL: `http://localhost:3000/api`
+Web Server kết nối với Frontend qua Socket.IO để đẩy luồng sự kiện theo thời gian thực mà không cần Refresh trang.
 
-### GET `/api/latest`
+### Server gửi cho Client (Emit)
+- `mqttStatus` `{ connected: Boolean }`: Cập nhật trạng thái Broker.
+- `devicesConfig` `[ {id, name, online} ]`: Danh sách Kit ESP32.
+- `fireAlarmData` `{...TelemetryPayload, deviceId}`: Dữ liệu cảm biến có gắn tag thiết bị.
+- `history` `[ {...TelemetryPayload} ]`: Danh sách 100 dòng lịch sử để vẽ Chart.
 
-Trả về dữ liệu cảm biến mới nhất.
+### Client gửi cho Server (On)
+- `controlDoor` `{ deviceId, action: "OPEN" | "CLOSE" }`: Yêu cầu đóng/mở cửa.
+- `triggerEmergency` `{ deviceId }`: Báo cháy giả lập.
+- `stopAlarm` `{ deviceId }`: Yêu cầu ngừng báo cháy.
 
-**Response**:
+---
+
+## 3. RESTful API Endpoints
+
+Cung cấp dữ liệu thô cho các ứng dụng ngoại vi hoặc kiểm thử bằng Postman. 
+Base URL mặc định: `http://localhost:3000/api`
+
+### `GET /api/latest`
+Lấy bản ghi dữ liệu cảm biến mới nhất từ RAM.
+
+**Response:**
 ```json
 {
-  "temperature": 25.5,
-  "humidity": 60.2,
-  "smoke": 350,
-  "flame": false,
-  "level": 1,
-  "timestamp": "2025-06-05T10:30:00.000Z"
+ "kit01": {
+ "temperature": 34.2,
+ "humidity": 46,
+ "smoke": 1290,
+ "flame": false,
+ "level": 1,
+ "deviceId": "kit01",
+ "timestamp": "2026-06-20T10:30:00.000Z"
+ }
 }
 ```
 
-### GET `/api/history`
+### `GET /api/history`
+Truy vấn 100 bản ghi lịch sử mới nhất từ cơ sở dữ liệu SQLite.
 
-Trả về lịch sử dữ liệu cảm biến (tối đa 100 bản ghi).
-
-**Response**:
+**Response:**
 ```json
 [
-  {
-    "temperature": 25.5,
-    "humidity": 60.2,
-    "smoke": 350,
-    "flame": false,
-    "timestamp": "2025-06-05T10:28:00.000Z"
-  },
-  ...
+ {
+ "id": 1,
+ "deviceId": "kit01",
+ "temperature": 34.2,
+ "humidity": 46.0,
+ "smoke": 1290,
+ "smoke_delta": 4.0,
+ "flame": 0,
+ "timestamp": "2026-06-20 10:30:00"
+ }
 ]
 ```
 
-### GET `/api/status`
-
-Trả về trạng thái hệ thống.
-
-**Response**:
-```json
-{
-  "mqtt_connected": true,
-  "total_readings": 42,
-  "uptime": 3600.5
-}
-```
-
-| Field | Type | Mô tả |
-|-------|------|--------|
-| `mqtt_connected` | `bool` | Trạng thái kết nối MQTT |
-| `total_readings` | `int` | Tổng số bản ghi trong bộ nhớ |
-| `uptime` | `float` | Thời gian server chạy (giây) |
-
 ---
 
-## 🔌 Socket.IO Events
+## 4. Cấu trúc Database (SQLite)
 
-### Server → Client (Emit)
+Toàn bộ lịch sử cảm biến được lưu trong file `database.sqlite` nằm trong thư mục `web-server/`.
 
-| Event | Payload | Mô tả |
-|-------|---------|-------|
-| `fireAlarmData` | `{temperature, humidity, smoke, flame, level, timestamp}` | Dữ liệu cảm biến real-time |
-| `mqttStatus` | `{connected: bool}` | Trạng thái kết nối MQTT |
-| `doorStatus` | `string` | Trạng thái cửa: "OPEN" / "CLOSED" |
-| `emergencyStatus` | `string` | Trạng thái khẩn cấp: "EMERGENCY" / "NORMAL" |
-| `history` | `Array<SensorData>` | Lịch sử cảm biến (khi client mới kết nối) |
-
-### Client → Server (Emit)
-
-| Event | Payload | Mô tả |
-|-------|---------|-------|
-| `controlDoor` | `string` "OPEN" / "CLOSE" | Điều khiển mở/đóng cửa |
-| `triggerEmergency` | — | Kích hoạt chế độ khẩn cấp |
-
----
-
-## 💾 Database Schema
-
-### Bảng `sensor_data`
-
+**Câu lệnh tạo Schema:**
 ```sql
-CREATE TABLE sensor_data (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    temperature REAL,
-    humidity    REAL,
-    smoke       REAL,
-    flame       INTEGER,      -- 0: không lửa, 1: có lửa
-    timestamp   DATETIME DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS sensor_data (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ deviceId TEXT,
+ temperature REAL,
+ humidity REAL,
+ smoke REAL,
+ smoke_delta REAL,
+ flame INTEGER,
+ timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 ```
-
-| Column | Type | Mô tả |
-|--------|------|--------|
-| `id` | INTEGER | Primary key, auto-increment |
-| `temperature` | REAL | Nhiệt độ (°C) |
-| `humidity` | REAL | Độ ẩm (%) |
-| `smoke` | REAL | Giá trị khí gas (ADC) |
-| `flame` | INTEGER | 0 = không lửa, 1 = có lửa |
-| `timestamp` | DATETIME | Thời điểm ghi nhận |
