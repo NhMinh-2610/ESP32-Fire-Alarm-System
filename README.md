@@ -88,7 +88,7 @@ Tất cả các định dạng bản tin JSON mà hệ thống truyền qua MQTT
  MSSV: 20225886<br/>
  minh.nn225886@sis.hust.edu.vn<br/>
  Trường Công Nghệ Thông Tin Truyền Thông, Đại Học Bách Khoa Hà Nội<br/>
- Đồ án IoT — Học kỳ 20252
+ Project IoT — Học kỳ 20252
  </td>
  </tr>
 </table>
