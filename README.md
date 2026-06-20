@@ -1,192 +1,96 @@
 <h1 align="center">
-  🔥 ESP32 Fire Alarm System (Microservices & Multi-Kit)
+ Hệ Thống Báo Cháy Thông Minh ESP32
 </h1>
 
 <p align="center">
-  <strong>Hệ Thống Báo Cháy Thông Minh — IoT Smart Fire Detection & Alert System</strong>
+ <strong>IoT Smart Fire Detection & Alert System (Microservices & Multi-Kit)</strong>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/MCU-ESP32-blue?style=for-the-badge&logo=espressif&logoColor=white" alt="ESP32" />
-  <img src="https://img.shields.io/badge/Platform-PlatformIO-orange?style=for-the-badge&logo=platformio&logoColor=white" alt="PlatformIO" />
-  <img src="https://img.shields.io/badge/Server-Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" />
-  <img src="https://img.shields.io/badge/Broker-Aedes_MQTT-660066?style=for-the-badge&logo=mqtt&logoColor=white" alt="MQTT Aedes" />
-  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License" />
+ <img src="https://img.shields.io/badge/MCU-ESP32-blue?style=for-the-badge&logo=espressif&logoColor=white" alt="ESP32" />
+ <img src="https://img.shields.io/badge/Platform-PlatformIO-orange?style=for-the-badge&logo=platformio&logoColor=white" alt="PlatformIO" />
+ <img src="https://img.shields.io/badge/Server-Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" />
+ <img src="https://img.shields.io/badge/Broker-Mosquitto-660066?style=for-the-badge&logo=mqtt&logoColor=white" alt="MQTT Mosquitto" />
+ <img src="https://img.shields.io/badge/Database-SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white" alt="SQLite" />
 </p>
 
 <p align="center">
-  <em>Hệ thống phát hiện cháy thời gian thực xây dựng theo kiến trúc Microservices. Tự host MQTT Broker bảo mật, quản lý đa thiết bị (Multi-Kit) độc lập với Web Dashboard điều khiển từ xa qua mã PIN.</em>
+ <em>Đồ án thiết kế Hệ thống phát hiện và cảnh báo cháy thông minh theo kiến trúc phân tán. Quản lý, giám sát nhiều thiết bị (Multi-Kit) độc lập qua MQTT với giao diện Web Dashboard trực quan, bảo mật bằng mã PIN.</em>
 </p>
 
 ---
 
-## 📋 Mục lục
-
-- [Tổng quan](#-tổng-quan)
-- [Tính năng nổi bật](#-tính-năng-nổi-bật)
-- [Kiến trúc Microservices](#-kiến-trúc-hệ-thống--microservices)
-- [Phần cứng](#-phần-cứng)
-- [Cài đặt & Sử dụng](#-cài-đặt--sử-dụng)
-- [Web Dashboard](#-web-dashboard)
-- [MQTT Topics & API](#-mqtt-topics--api)
-- [Tech Stack](#-tech-stack)
+## Mục lục
+- [ Tổng quan](#-tổng-quan)
+- [ Tính năng nổi bật](#-tính-năng-nổi-bật)
+- [️ Kiến trúc Hệ thống](#-kiến-trúc-hệ-thống)
+- [ Sơ đồ Phần cứng](#-sơ-đồ-phần-cứng)
+- [ Hướng dẫn Cài đặt & Sử dụng](#-hướng-dẫn-cài-đặt--sử-dụng)
+- [ API & Giao thức](#-api--giao-thức)
+- [‍ Tác giả](#-tác-giả)
 
 ---
 
-## 🌟 Tổng quan
+## Tổng quan
 
-**ESP32 Fire Alarm System** là đồ án hệ thống phát hiện và cảnh báo cháy thông minh. Hệ thống thiết kế theo kiến trúc **Microservices phân tán**, phân tách hoàn toàn Web Server và MQTT Broker để đảm bảo tính sẵn sàng cao, bảo mật chặt chẽ và dễ dàng mở rộng.
+**ESP32 Smart Fire Alarm** là đồ án kết hợp phần cứng IoT và kiến trúc phần mềm tiên tiến (Microservices) để đem lại sự an toàn tối ưu. 
 
-### Điểm nổi bật về mặt hệ thống
-
-- 🏗️ **Kiến trúc Microservices**: Chạy song song độc lập **Web Server** (giao diện) và **MQTT Broker** (luồng dữ liệu IoT). Nếu Web Server bảo trì, kết nối IoT vẫn không bị ngắt.
-- 🔒 **Tự host MQTT Broker (Aedes)**: Không dùng server công cộng. Tích hợp tính năng xác thực Username/Password để chống truy cập trái phép.
-- 🏢 **Multi-Kit Management**: Giám sát và điều khiển nhiều ESP32 Kit độc lập trên cùng một màn hình điều khiển qua các Tab.
-- 🔑 **Xác thực Mã PIN (Security PIN)**: Yêu cầu mã PIN an toàn khi người dùng thực hiện các thao tác nhạy cảm (Mở cửa thoát hiểm, Kích hoạt/Dừng báo động).
-- 📡 **Offline Detection**: Hệ thống ping heartbeat liên tục, giao diện tự động khóa và làm mờ bảng điều khiển nếu ESP32 mất kết nối quá 30 giây.
+Thay vì dựa dẫm vào các MQTT Broker Public (dễ bị delay hoặc bảo trì), hệ thống sử dụng **Mosquitto Local Broker** kết hợp với **Node.js Web Server** độc lập. Nhờ đó, tốc độ xử lý là tức thời (Real-time), kể cả khi đứt cáp quang thì hệ thống trong mạng LAN vẫn cảnh báo ổn định.
 
 ---
 
-## ✨ Tính năng nổi bật
+## Tính năng nổi bật
 
-| Nhóm | Tính năng | Mô tả |
-|------|-----------|-------|
-| **Cảm biến** | 🌡️ Đo nhiệt độ, độ ẩm<br>💨 Báo khí gas/CO<br>🔥 Phát hiện lửa | Dữ liệu cập nhật real-time. Cảnh báo chia làm 3 mức độ (Bình thường, Cảnh báo, Khẩn cấp). |
-| **Báo động** | 🔊 Còi Hú & 💡 Đèn LED<br>🚪 Mở cửa tự động | Kích hoạt còi hú xoay chiều và tự động kéo Servo mở cửa thoát hiểm khi có hỏa hoạn. |
-| **Giao diện** | 📊 Biểu đồ lịch sử<br>🗂️ Quản lý Đa Thiết bị | Web Dashboard thiết kế Premium Dark Theme, xem biểu đồ lịch sử cảm biến cho từng thiết bị riêng biệt. |
-| **Điều khiển**| 🛡️ Bảo vệ qua PIN<br>🛑 Dừng báo động | Mọi thao tác khẩn cấp đều phải điền PIN (`1234`). Chế độ dừng cảnh báo giả từ xa. |
-
----
-
-## 🏗️ Kiến trúc Hệ thống / Microservices
-
-```mermaid
-graph TD
-    subgraph "🔧 Hardware Layer (ESP32)"
-        ESP1["⚡ ESP32 (Kit 01)"]
-        ESP2["⚡ ESP32 (Kit 02)"]
-    end
-
-    subgraph "🧱 Backend Microservices (Local / VPS)"
-        BROKER["📡 Private MQTT Broker<br/>(Node.js + Aedes)<br/>Port 1883 | Auth: Admin"]
-        NODE["🟢 Web Server<br/>(Express + Socket.IO)<br/>Port 3000"]
-        DB[("💾 SQLite<br/>Database")]
-    end
-
-    subgraph "🌐 Client UI"
-        DASH["📊 Web Dashboard<br/>Tabs: Kit 01 | Kit 02"]
-    end
-
-    ESP1 -- "MQTT (Auth)" --> BROKER
-    ESP2 -- "MQTT (Auth)" --> BROKER
-    BROKER <-->|"MQTT (Auth)"| NODE
-    NODE -->|"Log History"| DB
-    NODE <-->|"WebSocket + API"| DASH
-```
+| Chức năng | Mô tả chi tiết |
+|-----------|----------------|
+| **Độ Trễ Phân Loại Bằng Không** | ESP32 tự đánh giá mức độ rủi ro (Bình thường / Cảnh báo / Khẩn cấp) trực tiếp trên Board mà không cần chờ Server. |
+| ️ **Bảo Mật Giao Diện Bằng PIN** | Mọi thao tác nguy hiểm (Dừng báo động, Mở cửa khẩn cấp) đều bị khóa bằng Modal yêu cầu nhập mã PIN. |
+| **Giám Sát Kết Nối (Heartbeat)** | Hệ thống Ping thiết bị liên tục. Nếu rút điện ESP32 quá 30 giây, Dashboard tự động vô hiệu hóa khu vực đó và hiển thị `OFFLINE`. |
+| **Lưu Trữ Lịch Sử Cảm Biến** | Tự động lưu giá trị cảm biến vào SQLite, xuất ra biểu đồ trực quan thông qua thư viện Chart.js. |
+| **Mở Cửa Tự Động** | Khi báo khẩn cấp (có lửa), Servo sẽ tự động mở cửa thoát hiểm, Còi báo động hú liên tục. |
 
 ---
 
-## 🔌 Phần cứng
+## ️ Kiến trúc Hệ thống
 
-| #   | Linh kiện          | Số lượng | Giao thức |
-| --- | ------------------ | -------- | --------- |
-| 1   | ESP32 DevKit C V4  | 1        |           |
-| 2   | DHT22              | 1        | Digital   |
-| 3   | MQ-2               | 1        | ADC       |
-| 4   | Flame Sensor (IR)  | 1        | Digital   |
-| 5   | Servo Motor (SG90) | 1        | PWM       |
-| 6   | Buzzer, LED x2     | 3        | Digital   |
-
-> 📖 Sơ đồ chân nối chi tiết: [docs/HARDWARE.md](docs/HARDWARE.md)
+Bạn có thể xem chi tiết kiến trúc hoạt động, luồng dữ liệu của hệ thống ở tài liệu:
+ **[Tài liệu Kiến trúc Hệ thống (ARCHITECTURE.md)](docs/ARCHITECTURE.md)**
 
 ---
 
-## 🚀 Cài đặt & Sử dụng
+## Sơ đồ Phần cứng
 
-Hệ thống yêu cầu cài đặt **Node.js** (cho server) và **PlatformIO** (cho firmware).
-
-### 1️⃣ Khởi chạy Private MQTT Broker (Microservice 1)
-
-Broker nội bộ quản lý luồng dữ liệu IoT an toàn:
-
-```bash
-cd mqtt-broker
-npm install
-npm start
-```
-> Broker sẽ chạy ở cổng `1883`. User mặc định: `admin`, Password: `firealarm_secure_2026`
-
-### 2️⃣ Khởi chạy Web Server (Microservice 2)
-
-```bash
-# Mở một Terminal MỚI
-cd web-server
-npm install
-npm start
-```
-> Web chạy tại **http://localhost:3000**. Mã PIN điều khiển mặc định: `1234`.
-
-### 3️⃣ Nạp firmware ESP32
-
-Sửa file cấu hình WiFi và IP của MQTT Broker trong thư mục firmware trước khi nạp:
-```bash
-cd firmware
-# Kết nối cáp USB và nạp code
-pio run --target upload
-```
-
-> 📖 Xem cách đổi cấu hình/Mô phỏng Wokwi tại [docs/SETUP.md](docs/SETUP.md)
+Bạn có thể xem danh sách toàn bộ linh kiện sử dụng, sơ đồ đấu dây và ý nghĩa các ngưỡng (Threshold) cảm biến tại đây:
+ **[Tài liệu Sơ đồ Phần cứng (HARDWARE.md)](docs/HARDWARE.md)**
 
 ---
 
-## 📊 Web Dashboard
+## Hướng dẫn Cài đặt & Sử dụng
 
-Dashboard sở hữu thiết kế **Premium Dark Theme** sử dụng Glassmorphism.
-
-- **Kit Tabs**: Chuyển đổi trạng thái, biểu đồ giữa nhiều ESP32.
-- **Offline Overlay**: Nhận biết thiết bị mất mạng. Màn hình tự động làm mờ và khóa phím điều khiển.
-- **Security Modal**: Mọi thao tác như "Mở cửa", "Kích hoạt báo động", "Dừng báo động" yêu cầu nhập PIN bảo mật.
-- **Fire Level Bar**: Thanh đánh giá rủi ro an toàn tự động dựa trên quy tắc logic cảm biến (Ngưỡng khí gas + Ngưỡng nhiệt).
+Để xem cách khởi động Mosquitto Broker, nạp Code xuống ESP32 bằng PlatformIO, cũng như cách chạy giao diện Web Dashboard, vui lòng đọc hướng dẫn:
+ **[Hướng dẫn Cài đặt (SETUP.md)](docs/SETUP.md)**
 
 ---
 
-## 📡 MQTT Topics & API
+## API & Giao thức
 
-Hỗ trợ Prefix Topic linh hoạt (ví dụ `nguyennhatminh_20225886/kit01/telemetry`).
-
-| Topic (`{prefix}/{device_id}/*`) | Mô tả                   |
-| -------------------------------- | ----------------------- |
-| `.../telemetry`                  | ESP32 gửi dữ liệu cảm biến định kỳ |
-| `.../status/door`                | ESP32 gửi phản hồi trạng thái thật của cửa (OPEN/CLOSED) |
-| `.../led_control`                | Web Server ra lệnh (OPEN, CLOSE, STOP_ALARM) dưới dạng JSON |
-
-> 📖 Xem toàn bộ Payload và API: [docs/API.md](docs/API.md)
+Tất cả các định dạng bản tin JSON mà hệ thống truyền qua MQTT và mô tả các REST API đều được liệt kê ở đây:
+ **[Tài liệu API và Payload MQTT (API.md)](docs/API.md)**
 
 ---
 
-## 🛠️ Tech Stack
-
-- **Firmware:** C++ (Arduino Framework), PlatformIO
-- **Microservices:** Node.js, Express, Aedes MQTT, Socket.IO
-- **Database:** SQLite (sql.js)
-- **Frontend:** Vanilla JS, CSS3, Chart.js 4.x
-- **Hardware Simulation:** Wokwi
-
----
-
-## 👨‍💻 Tác giả
+## ‍ Tác giả
 
 <table>
-  <tr>
-    <td align="center">
-      <strong>Nguyễn Nhật Minh</strong><br/>
-      MSSV: 20225886<br/>
-      📧 minh.nn225886@sis.hust.edu.vn<br/>
-      🏫 Trường Công Nghệ Thông Tin Truyền Thông, ĐHBK Hà Nội (HUST)<br/>
-      📚 Đồ án IoT — Học kỳ 20252
-    </td>
-  </tr>
+ <tr>
+ <td align="center">
+ <strong>Nguyễn Nhật Minh</strong><br/>
+ MSSV: 20225886<br/>
+ minh.nn225886@sis.hust.edu.vn<br/>
+ Trường Công Nghệ Thông Tin Truyền Thông, Đại Học Bách Khoa Hà Nội<br/>
+ Đồ án IoT — Học kỳ 20252
+ </td>
+ </tr>
 </table>
 
----
-<p align="center"><sub>Made with ❤️ at Hanoi University of Science and Technology</sub></p>
+<p align="center"><sub>Made with ️ in HUST</sub></p>
