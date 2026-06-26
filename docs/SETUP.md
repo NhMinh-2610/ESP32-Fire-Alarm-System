@@ -6,12 +6,12 @@ Tài liệu này cung cấp hướng dẫn Step-by-Step để bạn cài đặt,
 
 ## 1. Yêu cầu phần mềm
 
-| Phần mềm | Vai trò | Link tải |
-|-----------|---------------------|----------|
-| **Visual Studio Code** | Code Editor chính | [Tải xuống](https://code.visualstudio.com/) |
-| **PlatformIO IDE** | Nạp Firmware cho ESP32 | Extention trên VS Code |
-| **Node.js (v18+)** | Chạy Web Server | [Tải xuống](https://nodejs.org/) |
-| **Mosquitto Broker** | Dịch vụ MQTT Server nội bộ | [Tải xuống](https://mosquitto.org/download/) |
+| Phần mềm               | Vai trò                    | Link tải                                     |
+| ---------------------- | -------------------------- | -------------------------------------------- |
+| **Visual Studio Code** | Code Editor chính          | [Tải xuống](https://code.visualstudio.com/)  |
+| **PlatformIO IDE**     | Nạp Firmware cho ESP32     | Extention trên VS Code                       |
+| **Node.js (v18+)**     | Chạy Web Server            | [Tải xuống](https://nodejs.org/)             |
+| **Mosquitto Broker**   | Dịch vụ MQTT Server nội bộ | [Tải xuống](https://mosquitto.org/download/) |
 
 ---
 
@@ -22,10 +22,14 @@ Hệ thống sử dụng **Mosquitto MQTT Broker** chạy trên máy tính Windo
 1. Bạn cần cài đặt Mosquitto bản Windows.
 2. Tại thư mục gốc của project, có sẵn file `mosquitto_local.conf` cấu hình port `1883` và cho phép mọi thiết bị kết nối.
 3. Mở Terminal (PowerShell) bằng quyền Administrator và gõ:
- ```powershell
- & "C:\Program Files\mosquitto\mosquitto.exe" -c ".\mosquitto_local.conf" -v
- ```
- > **Lưu ý**: Hãy giữ cửa sổ Terminal này luôn mở. MQTT Broker đã sẵn sàng nhận dữ liệu.
+
+```powershell
+& "C:\Program Files\mosquitto\mosquitto.exe" -c ".\mosquitto_local.conf" -v
+```
+
+// & "C:\Program Files\mosquitto\mosquitto.exe" -c "c:\Users\nnhat\OneDrive - Hanoi University of Science and Technology\Documents\Nguyen_Nhat_Minh\HUST_20252\iot\Project\ESP32-Fire-Alarm-System\mosquitto_local.conf" -v
+
+> **Lưu ý**: Hãy giữ cửa sổ Terminal này luôn mở. MQTT Broker đã sẵn sàng nhận dữ liệu.
 
 ---
 
@@ -34,29 +38,35 @@ Hệ thống sử dụng **Mosquitto MQTT Broker** chạy trên máy tính Windo
 Để ESP32 có thể gửi dữ liệu, nó phải kết nối cùng chung mạng WiFi với máy tính chạy Mosquitto.
 
 ### A. Tìm địa chỉ IP máy tính
+
 1. Mở Command Prompt (`cmd`) trên máy tính và gõ lệnh `ipconfig`.
 2. Tìm dòng `IPv4 Address`. Giả sử IP máy tính của bạn là `192.168.1.5`.
 
 ### B. Cấu hình Code
+
 Mở file `firmware/include/config.h` và sửa lại thông tin:
+
 ```cpp
 // Sửa thành tên và mật khẩu WiFi đang phát trong nhà bạn
 #define WIFI_SSID "Tên_WiFi"
 #define WIFI_PASSWORD "Mật_khẩu"
 
 // Điền IP máy tính bạn vừa lấy được ở bước A
-#define MQTT_SERVER "192.168.1.5" 
+#define MQTT_SERVER "192.168.1.5"
 #define MQTT_USER "admin"
 #define MQTT_PASSWORD "firealarm_secure_2026"
 ```
 
 ### C. Nạp Code (Upload)
+
 1. Cắm cáp kết nối ESP32 vào máy tính.
 2. Trong thư mục `firmware`, sử dụng lệnh của PlatformIO để nạp code:
- ```bash
- cd firmware
- pio run --target upload
- ```
+
+```bash
+cd firmware
+pio run --target upload
+```
+
 3. Sau khi nạp xong, hãy mở Serial Monitor để kiểm tra: `pio device monitor --baud 115200`.
 
 ---
@@ -64,15 +74,19 @@ Mở file `firmware/include/config.h` và sửa lại thông tin:
 ## 4. Bước 3: Khởi động Web Server (Dashboard)
 
 1. Mở một Terminal mới, chuyển vào thư mục `web-server`:
- ```bash
- cd web-server
- ```
+
+```bash
+cd web-server
+```
+
 2. Mở file `web-server/src/config/config.js` để kiểm tra IP Broker (thường là `127.0.0.1` nếu web server chạy cùng máy với Mosquitto).
 3. Cài đặt các thư viện cần thiết và khởi chạy:
- ```bash
- npm install
- npm start
- ```
+
+```bash
+npm install
+npm start
+```
+
 4. Giao diện điều khiển (Dashboard) sẽ hiển thị tại: **http://localhost:3000**
 
 ---

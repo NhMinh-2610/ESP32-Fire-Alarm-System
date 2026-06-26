@@ -155,11 +155,12 @@
 
 const unsigned long WIFI_RETRY_MS = 10000;
 const unsigned long MQTT_RETRY_MS = 5000;
-const unsigned long SENSOR_INTERVAL_MS = 2000;
+const unsigned long SENSOR_INTERVAL_MS = 1000;
 const unsigned long STATUS_INTERVAL_MS = 5000;
 const unsigned long MQ2_WARMUP_MS = 30000;
 const unsigned long ALARM_BLINK_MS = 180;
 const unsigned long WARNING_BLINK_MS = 500;
+const int FLAME_SHORT_CIRCUIT_THRESH = 50;       // Analog < 50 = sensor bi chay/chap
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -367,20 +368,47 @@ bool mq2DangerDetected(int smokeValue, bool mq2Ready) {
 }
 
 int classifyFireLevel(float temperature, bool temperatureValid, int smokeValue, bool hasFlame, bool mq2Ready) {
- const bool smokeDanger = mq2DangerDetected(smokeValue, mq2Ready);
- const bool smokeWarning = mq2WarningDetected(smokeValue, mq2Ready);
- const bool tempDanger = temperatureValid && temperature > TEMP_DANGER_C;
- const bool tempWarning = temperatureValid && temperature > TEMP_WARNING_C;
+  const bool smokeDanger = mq2DangerDetected(smokeValue, mq2Ready);
+  const bool smokeWarning = mq2WarningDetected(smokeValue, mq2Ready);
+  const bool tempDanger = temperatureValid && temperature > TEMP_DANGER_C;
+  const bool tempWarning = temperatureValid && temperature > TEMP_WARNING_C;
 
- if (hasFlame || (smokeDanger && tempDanger)) {
- return 3;
- }
+  // Gop nhom tin hieu
+  const bool smokeAbnormal = smokeWarning || smokeDanger;
+  const bool tempAbnormal  = tempWarning  || tempDanger;
 
- if (smokeWarning || tempWarning) {
- return 2;
- }
+  // Phat hien cam bien lua bi chay/chap mach (analog doc gan 0)
+  const bool flameSensorBurned = (lastFlameAnalog < FLAME_SHORT_CIRCUIT_THRESH) && (lastFlameAnalog >= 0);
 
- return 1;
+  // =================================================================
+  // CAP 3 - KHAN CAP (Xac nhan hoac rat co the dang chay)
+  // =================================================================
+  // 1. Cam bien phat hien LUA (tia hong ngoai) -> Chay thuc su, bao ngay
+  // 2. Khoi bat thuong + Nhiet do tang dong thoi -> Dam chay dang phat trien
+  // 3. Cam bien lua bi chay/chap (analog = 0) -> Lua da dot chay sensor
+  // 4. Khoi day dac, muc do nguy hiem (smokeDanger) -> Kha nang cao la chay lon
+  if (hasFlame || (smokeAbnormal && tempAbnormal) || flameSensorBurned || smokeDanger) {
+    if (flameSensorBurned) {
+      Serial.println("[ALARM] Cam bien lua doc gia tri cuc thap - co the bi chay/chap!");
+    }
+    return 3;
+  }
+
+  // =================================================================
+  // CAP 2 - CANH BAO (Bat thuong, can kiem tra, chua xac nhan chay)
+  // =================================================================
+  // 1. Khoi bat thuong nhung nhiet do on dinh
+  //    -> Co the do nau an, hut thuoc, chay am i (smoldering) chua bung
+  // 2. Nhiet do CUC CAO (>60C) nhung chua co khoi
+  //    -> Thiet bi qua nhiet, nguon nhiet an, sap bung chay
+  if (smokeAbnormal || tempDanger) {
+    return 2;
+  }
+
+  // =================================================================
+  // CAP 1 - AN TOAN
+  // =================================================================
+  return 1;
 }
 
 void connectWiFiIfNeeded() {
@@ -621,10 +649,10 @@ void readSensorsAndPublish() {
  Serial.println(" (Kiểm tra lại chân DATA, VCC, GND của DHT).");
  }
 
- const int measuredLevel = classifyFireLevel(temperature, dhtValid, smokeValue, hasFlame, mq2Ready);
- if (!manualEmergency) {
- fireLevel = measuredLevel;
- }
+  const int measuredLevel = classifyFireLevel(temperature, dhtValid, smokeValue, hasFlame, mq2Ready);
+  if (!manualEmergency) {
+    fireLevel = measuredLevel;
+  }
 
  const bool effectiveEmergency = manualEmergency || fireLevel == 3;
  const bool effectiveDoorOpen = effectiveEmergency || doorOverrideOpen;

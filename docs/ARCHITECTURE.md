@@ -80,15 +80,13 @@ Logic đánh giá mức độ nguy hiểm được xử lý trực tiếp dướ
 
 ```mermaid
 graph TD
- START[" Đọc cảm biến"] --> CHECK_FLAME{" Có tia hồng ngoại<br/>(Phát hiện lửa)?"}
- CHECK_FLAME -->|"Có"| LEVEL3[" CẤP 3: KHẨN CẤP"]
+ START[" Đọc cảm biến"] --> CHECK_L3{" Mức 3: Khẩn cấp<br/>1. Có lửa (Hồng ngoại)<br/>2. Cảm biến lửa chập/cháy<br/>3. Khói cực dày đặc (Danger)<br/>4. Khói tăng + Nhiệt tăng"}
+ CHECK_L3 -->|"Có bất kỳ"| LEVEL3[" CẤP 3: KHẨN CẤP"]
  
- CHECK_FLAME -->|"Không"| CHECK_EXTREME{" Khói cực dày (Danger)<br/>VÀ ️ Nhiệt > 50°C?"}
- CHECK_EXTREME -->|"Có"| LEVEL3
+ CHECK_L3 -->|"Không"| CHECK_L2{" Mức 2: Cảnh báo<br/>1. Có khói bất thường (Warning)<br/>2. Nhiệt độ cực cao (>60°C)"}
+ CHECK_L2 -->|"Có bất kỳ"| LEVEL2[" CẤP 2: CẢNH BÁO"]
  
- CHECK_EXTREME -->|"Không"| CHECK_WARNING{" Có khói (Warning)<br/>HOẶC ️ Nhiệt > 40°C?"}
- CHECK_WARNING -->|"Có"| LEVEL2[" CẤP 2: CẢNH BÁO"]
- CHECK_WARNING -->|"Không"| LEVEL1[" CẤP 1: BÌNH THƯỜNG"]
+ CHECK_L2 -->|"Không"| LEVEL1[" CẤP 1: BÌNH THƯỜNG"]
 
  LEVEL3 --> ACTION3[" Mở cửa thoát hiểm<br/> Bật còi báo động<br/> LED Đỏ nhấp nháy"]
  LEVEL2 --> ACTION2[" Báo động giao diện Web<br/> LED Đỏ sáng tĩnh"]
